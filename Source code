@@ -1,0 +1,148 @@
+--calculating total sales
+select* from bright_coffee_shop.coffee_shop.coffee_shop_sales;
+sum(unit_price*transaction_qty) as total_sales ORDER BY total_sales DESC
+
+--Group product category
+select product_category
+from bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY product_category;
+
+
+--Cast unit_price properly (some entries use commas)
+select unit_price::FLOAT AS unit_price_float
+from bright_coffee_shop.coffee_shop.coffee_shop_sales;
+--CREATE OR REPLACE TABLE qty_items_sold_by_category AS
+--Quantity of items sold by product category
+select 
+    product_category,
+    SUM(transaction_qty) AS total_quantity_sold
+from bright_coffee_shop.coffee_shop.coffee_shop_sales
+group by product_category
+order by total_quantity_sold DESC;
+    
+    
+--CREATE OR REPLACE TABLE total_sales AS    
+--total revenu
+select sum(unit_price*transaction_qty) as total_sales 
+   from bright_coffee_shop.coffee_shop.coffee_shop_sales;
+--CREATE OR REPLACE TABLE total_sales_per_store_location AS
+--from bright_coffee_shop.coffee_shop.coffee_shop_sales
+--where product_type=null;
+--total sales per locatio
+select store_location, 
+sum(unit_price*transaction_qty) as total_sales 
+   from bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY store_location;
+
+
+--date & time buckets
+select transaction_date,
+transaction_time
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales;
+
+--day bucket
+SELECT 
+  DATE_TRUNC('day', transaction_date) AS day_bucket,
+  sum(unit_price*transaction_qty) AS daily_sales
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY day_bucket
+ORDER BY day_bucket;
+
+--week bucket
+SELECT 
+  DATE_TRUNC('week', transaction_date) AS week_bucket,
+  sum(unit_price*transaction_qty) AS weekly_sales
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY week_bucket
+ORDER BY week_bucket;
+
+--monthly bucket
+SELECT 
+  DATE_TRUNC('month', transaction_date) AS month_bucket,
+  sum(unit_price*transaction_qty) AS monthly_sales
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY month_bucket
+ORDER BY month_bucket;
+
+--hour bucket
+select prodect_category date_trunc('hour',transaction_time) AS hour_bucket,
+ sum(unit_price*transaction_qty) AS hourly_sales
+from bright_coffee_shop.coffee_shop.coffee_shop_sales
+group by hour_bucket
+order by hour_bucket;
+
+
+
+--hourly bucket with times of day
+  SELECT  DATE_TRUNC('hour', transaction_time) AS hour_bucket,
+  CASE 
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 6 AND 11 THEN 'Morning'
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 12 AND 16 THEN 'Afternoon'
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 17 AND 20 THEN 'Evening'
+    ELSE 'Night'
+  END AS time_of_day,
+  sum(unit_price * transaction_qty) AS hourly_sales
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY hour_bucket, time_of_day
+ORDER BY hourly_sales DESC;
+
+CREATE MATERIALIZED VIEW hourly_bucket AS 
+SELECT 
+  DATE_TRUNC('HOUR', transaction_time) AS hour_bucket,
+  CASE 
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 6 AND 11 THEN 'Morning'
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 12 AND 16 THEN 'Afternoon'
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 17 AND 20 THEN 'Evening'
+    ELSE 'Night'
+  END AS time_of_day,
+  sum(unit_price * transaction_qty) AS hourly_sales
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+GROUP BY hour_bucket, time_of_day
+ORDER BY hourly_sales DESC;
+
+
+
+ 
+CREATE OR REPLACE TABLE hourly_bucket AS 
+
+SELECT 
+
+  DATE_TRUNC('HOUR', transaction_time) AS hour_bucket,
+
+  CASE 
+
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 6 AND 11 THEN 'Morning'
+
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 12 AND 16 THEN 'Afternoon'
+
+    WHEN EXTRACT(HOUR FROM transaction_time) BETWEEN 17 AND 20 THEN 'Evening'
+
+    ELSE 'Night'
+
+  END AS time_of_day,
+
+  SUM(unit_price * transaction_qty) AS hourly_sales
+
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+
+GROUP BY hour_bucket, time_of_day
+
+ORDER BY hourly_sales DESC;
+
+ select* from hourly_bucket;
+
+
+--select*from total_sales_by_category;
+
+--CREATE OR REPLACE TABLE selling_product_phour AS
+--most selling product on peak hour
+SELECT
+  product_category,
+  EXTRACT(HOUR FROM transaction_time) AS peak_hour,
+  SUM(transaction_qty * unit_price) AS total_sale
+FROM bright_coffee_shop.coffee_shop.coffee_shop_sales
+WHERE EXTRACT(HOUR FROM transaction_time) = 10
+GROUP BY product_category, peak_hour
+ORDER BY total_sale DESC;
+
+
